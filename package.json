@@ -2,6 +2,7 @@
   "name": "pokemon-3d",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://mstupp1.github.io/pika",
   "dependencies": {
     "@react-three/drei": "^9.80.0",
     "@react-three/fiber": "^8.15.11",
@@ -9,6 +10,7 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "@types/three": "^0.158.2",
+    "gh-pages": "^6.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "^5.0.1",
@@ -19,7 +21,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [

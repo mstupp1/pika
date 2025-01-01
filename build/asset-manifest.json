@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/pika/static/css/main.8e42287e.css",
+    "main.js": "/pika/static/js/main.c7832550.js",
+    "index.html": "/pika/index.html",
+    "main.8e42287e.css.map": "/pika/static/css/main.8e42287e.css.map",
+    "main.c7832550.js.map": "/pika/static/js/main.c7832550.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8e42287e.css",
+    "static/js/main.c7832550.js"
+  ]
+}
