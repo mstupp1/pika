@@ -1,12 +1,6 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  Suspense,
-} from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Stats } from '@react-three/drei';
+import { Environment, Stats } from '@react-three/drei';
 import { Pokemon } from './components/Pokemon';
 import { Forest } from './components/Forest';
 import { Berry } from './components/Berry';
@@ -81,8 +75,10 @@ function App() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>(
     'start'
   );
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const score = useRef(0);
+  // const [score, setScore] = useState(0);
+  // const [timeLeft, setTimeLeft] = useState(60);
+  const timeLeftRef = useRef(60);
   const [berryPositions, setBerryPositions] = useState<BerryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRainTime, setLastRainTime] = useState(0);
@@ -129,8 +125,10 @@ function App() {
 
   const startGame = useCallback(() => {
     setGameState('playing');
-    setScore(0);
-    setTimeLeft(60);
+    // setScore(0);
+    score.current = 0;
+    // setTimeLeft(60);
+    timeLeftRef.current = 60;
 
     // Generate initial berries with spacing, all regular berries at start
     const initialBerries: BerryData[] = [];
@@ -199,7 +197,7 @@ function App() {
 
       setBerryPositions((prev) => {
         const newBerries: BerryData[] = [];
-        const gameProgress = (60 - timeLeft) / 60; // 0 to 1
+        const gameProgress = (60 - timeLeftRef.current) / 60; // 0 to 1
 
         // More aggressive rain intensity
         const baseRainCount = 5; // Start with more berries
@@ -225,7 +223,7 @@ function App() {
       clearInterval(updateInterval);
       clearInterval(spawnInterval);
     };
-  }, [gameState, timeLeft, lastRainTime]);
+  }, [gameState, lastRainTime]);
 
   // Periodic berry spawn to maintain minimum count
   useEffect(() => {
@@ -233,12 +231,12 @@ function App() {
 
     const interval = setInterval(() => {
       setBerryPositions((prev) => {
-        const targetCount = getTargetBerryCount(timeLeft);
+        const targetCount = getTargetBerryCount(timeLeftRef.current);
         if (prev.length >= targetCount) return prev;
 
         const newBerries: BerryData[] = [];
         const deficit = targetCount - prev.length;
-        const gameProgress = (60 - timeLeft) / 60; // 0 to 1
+        const gameProgress = (60 - timeLeftRef.current) / 60; // 0 to 1
 
         // More aggressive spawning that increases over time
         const baseSpawnRate = Math.min(
@@ -262,23 +260,21 @@ function App() {
         }
         return [...prev, ...newBerries];
       });
-    }, Math.max(500, 1000 - Math.floor((60 - timeLeft) * 5))); // Slower spawn frequency
+    }, Math.max(500, 1000 - Math.floor((60 - timeLeftRef.current) * 5))); // Slower spawn frequency
 
     return () => clearInterval(interval);
-  }, [gameState, timeLeft, getTargetBerryCount]);
+  }, [gameState, getTargetBerryCount]);
 
   // Timer countdown
   useEffect(() => {
     if (gameState !== 'playing') return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setGameState('gameover');
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (timeLeftRef.current > 1) {
+        timeLeftRef.current -= 1;
+      } else {
+        setGameState('gameover');
+      }
     }, 1000);
 
     return () => clearInterval(interval);
@@ -286,7 +282,8 @@ function App() {
 
   const handleCollect = useCallback(
     (isGolden: boolean, isPurple: boolean) => {
-      setScore((prev) => prev + (isGolden ? 5 : isPurple ? 2 : 1));
+      score.current += isGolden ? 5 : isPurple ? 2 : 1;
+      // setScore((prev) => prev + (isGolden ? 5 : isPurple ? 2 : 1));
 
       // Play collection sound
       playCollectSound();
@@ -310,9 +307,9 @@ function App() {
       // Spawn replacement berries immediately
       setBerryPositions((prev) => {
         const newBerries: BerryData[] = [];
-        const targetCount = getTargetBerryCount(timeLeft);
+        const targetCount = getTargetBerryCount(timeLeftRef.current);
         const currentCount = prev.length;
-        const gameProgress = (60 - timeLeft) / 60; // 0 to 1
+        const gameProgress = (60 - timeLeftRef.current) / 60; // 0 to 1
 
         // Calculate how many berries to add - much more aggressive spawning that increases over time
         const baseSpawn = Math.min(
@@ -323,11 +320,11 @@ function App() {
         let numToSpawn = baseSpawn + progressBonus;
 
         // Add bonus berries based on score milestones
-        if (score > 0 && score % 10 === 0) numToSpawn += 6;
+        if (score.current > 0 && score.current % 10 === 0) numToSpawn += 6;
 
         // Add more berries towards the end of the game
-        if (timeLeft <= 20) numToSpawn += 5;
-        if (timeLeft <= 10) numToSpawn += 5; // Even more in the final 10 seconds
+        if (timeLeftRef.current <= 20) numToSpawn += 5;
+        if (timeLeftRef.current <= 10) numToSpawn += 5; // Even more in the final 10 seconds
 
         // Always allow special berries
         const allowGolden = true;
@@ -344,7 +341,7 @@ function App() {
         return [...prev, ...newBerries];
       });
     },
-    [timeLeft, score, getTargetBerryCount]
+    [getTargetBerryCount]
   );
 
   // Only render after initial loading is complete
@@ -370,19 +367,19 @@ function App() {
       </div>
     );
   }
-  // console.log(berryPositions);
+
   return (
     <>
       <div className="hud">
-        <div className="timer">Time: {timeLeft}s</div>
-        <div className="score">Score: {score}</div>
+        <div className="timer">Time: {timeLeftRef.current}s</div>
+        <div className="score">Score: {score.current}</div>
       </div>
 
       {gameState === 'gameover' && (
         <div className="gameover">
           <CustomCursor />
           <h1>GAME OVER</h1>
-          <h2>Final Score: {score}</h2>
+          <h2>Final Score: {score.current}</h2>
           <button onClick={startGame}>Play Again</button>
         </div>
       )}
@@ -428,27 +425,27 @@ function App() {
             <meshStandardMaterial color="#90EE90" />
           </mesh>
 
-          <Clouds />
+          {/* <Clouds /> */}
           <Mountains />
-          <Pokemon position={[0, 0, 0]} gameState={gameState} score={score} />
+          <Pokemon
+            position={[0, 0, 0]}
+            gameState={gameState}
+            score={score.current}
+          />
           <Forest />
-          <Suspense fallback={null}>
-            <Berry position={[0, 0, 0]} />
-
-            {/* {berryPositions.map((berry, index) => (
-              <Berry
-                key={`${index}-${berry.position.join(',')}`}
-                position={berry.position}
-                isGolden={berry.isGolden}
-                isPurple={berry.isPurple}
-                onCollect={() =>
-                  berry.canCollect
-                    ? handleCollect(berry.isGolden, berry.isPurple)
-                    : undefined
-                }
-              />
-            ))} */}
-          </Suspense>
+          {berryPositions.map((berry, index) => (
+            <Berry
+              key={`${index}-${berry.position.join(',')}`}
+              position={berry.position}
+              isGolden={berry.isGolden}
+              isPurple={berry.isPurple}
+              onCollect={() =>
+                berry.canCollect
+                  ? handleCollect(berry.isGolden, berry.isPurple)
+                  : undefined
+              }
+            />
+          ))}
         </Canvas>
         <Stats className="stats" />
       </div>

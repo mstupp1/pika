@@ -20,7 +20,7 @@ body {
 .custom-cursor {
   width: 20px;
   height: 20px;
-  border: 2px solid #FFE135;
+  border: 2px solid #ffe135;
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
@@ -33,7 +33,7 @@ body {
   position: absolute;
   width: 4px;
   height: 4px;
-  background: #FFE135;
+  background: #ffe135;
   border-radius: 50%;
   top: 50%;
   left: 50%;
@@ -42,7 +42,7 @@ body {
 
 .custom-cursor.hover {
   transform: scale(1.5);
-  border-color: #FFE135;
+  border-color: #ffe135;
   mix-blend-mode: difference;
 }
 
@@ -98,7 +98,11 @@ canvas {
   justify-content: center;
   align-items: center;
   z-index: 2;
-  background: radial-gradient(circle at center, transparent, rgba(0, 0, 0, 0.7));
+  background: radial-gradient(
+    circle at center,
+    transparent,
+    rgba(0, 0, 0, 0.7)
+  );
   animation: menu-fade-in 1s ease-out;
 }
 
@@ -108,7 +112,7 @@ canvas {
   margin-bottom: 40px;
   text-transform: uppercase;
   letter-spacing: 4px;
-  background: linear-gradient(45deg, #FFD700, #FFF, #FFD700);
+  background: linear-gradient(45deg, #ffd700, #fff, #ffd700);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
@@ -124,7 +128,7 @@ canvas {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
-  background: linear-gradient(45deg, #FFD700, #FFA500);
+  background: linear-gradient(45deg, #ffd700, #ffa500);
   border: 3px solid rgba(255, 255, 255, 0.5);
   border-radius: 50px;
   color: white;
@@ -143,7 +147,11 @@ canvas {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8), transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.8),
+    transparent 70%
+  );
   transform: rotate(45deg);
   animation: button-shine 3s ease-in-out infinite;
   pointer-events: none;
@@ -152,7 +160,7 @@ canvas {
 .start-screen button:hover {
   transform: scale(1.1) translateY(-5px);
   box-shadow: 0 10px 40px rgba(255, 215, 0, 0.4);
-  background: linear-gradient(45deg, #FFA500, #FFD700);
+  background: linear-gradient(45deg, #ffa500, #ffd700);
 }
 
 .start-screen button:active {
@@ -171,7 +179,8 @@ canvas {
 }
 
 @keyframes title-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: brightness(1) drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
     transform: scale(1);
   }
@@ -182,11 +191,13 @@ canvas {
 }
 
 @keyframes button-shine {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(45deg) translateY(0%);
     opacity: 0;
   }
-  10%, 90% {
+  10%,
+  90% {
     opacity: 0;
   }
   50% {
@@ -205,7 +216,11 @@ canvas {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9));
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.5),
+    rgba(0, 0, 0, 0.9)
+  );
   color: white;
   z-index: 10;
   cursor: auto;
@@ -218,7 +233,7 @@ canvas {
   margin-bottom: 30px;
   text-transform: uppercase;
   letter-spacing: 4px;
-  background: linear-gradient(45deg, #FFD700, #FFF, #FFD700);
+  background: linear-gradient(45deg, #ffd700, #fff, #ffd700);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
@@ -238,7 +253,7 @@ canvas {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
-  background: linear-gradient(45deg, #FFD700, #FFA500);
+  background: linear-gradient(45deg, #ffd700, #ffa500);
   border: 3px solid rgba(255, 255, 255, 0.5);
   border-radius: 50px;
   color: white;
@@ -257,7 +272,11 @@ canvas {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8), transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.8),
+    transparent 70%
+  );
   transform: rotate(45deg);
   animation: button-shine 3s ease-in-out infinite;
   pointer-events: none;
@@ -266,7 +285,7 @@ canvas {
 .gameover button:hover {
   transform: scale(1.1) translateY(-5px);
   box-shadow: 0 10px 40px rgba(255, 215, 0, 0.4);
-  background: linear-gradient(45deg, #FFA500, #FFD700);
+  background: linear-gradient(45deg, #ffa500, #ffd700);
 }
 
 .gameover button:active {
@@ -296,8 +315,12 @@ canvas {
 }
 
 @keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
 }
 
 .golden-text {
@@ -308,10 +331,7 @@ canvas {
   font-size: 96px;
   font-weight: bold;
   color: white;
-  text-shadow: 
-    0 0 20px #FFD700,
-    0 0 40px #FFD700,
-    0 0 60px #FFD700;
+  text-shadow: 0 0 20px #ffd700, 0 0 40px #ffd700, 0 0 60px #ffd700;
   animation: golden-appear 1s ease-out forwards;
   pointer-events: none;
   z-index: 100;
@@ -338,7 +358,12 @@ canvas {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, rgba(255, 215, 0, 0.3), rgba(255, 255, 255, 0.5), rgba(255, 215, 0, 0.3));
+  background: linear-gradient(
+    45deg,
+    rgba(255, 215, 0, 0.3),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 215, 0, 0.3)
+  );
   pointer-events: none;
   z-index: 99;
   animation: flash-fade 0.5s ease-out forwards;
@@ -351,4 +376,19 @@ canvas {
   100% {
     opacity: 0;
   }
-} 
+}
+.stats {
+  /* position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10; */
+  /* position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%; */
+  /* position: absolute;
+  top: 0;
+  right: 0; */
+  margin-top: 10rem;
+}
