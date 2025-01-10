@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Mesh, Group, Vector3, Euler, ShaderMaterial } from 'three';
 import { Html } from '@react-three/drei';
+import { scoreAtom } from '../atoms/gameState';
+import { useAtom } from 'jotai';
 
 interface PokemonProps {
   position: [number, number, number];
@@ -71,7 +73,7 @@ const GAME_CAMERA_ANGLE = Math.PI / 4; // 45 degrees
 // Simplified toon shader for Pikachu's body
 const pikachuBodyShader = {
   uniforms: {
-    color: { value: null }
+    color: { value: null },
   },
   vertexShader: `
     varying vec3 vNormal;
@@ -100,14 +102,14 @@ const pikachuBodyShader = {
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
-  `
+  `,
 };
 
 // Simplified sparkle shader for electric effects
 const sparkleShader = {
   uniforms: {
     time: { value: 0 },
-    color: { value: null }
+    color: { value: null },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -133,7 +135,7 @@ const sparkleShader = {
       
       gl_FragColor = vec4(finalColor, alpha);
     }
-  `
+  `,
 };
 
 // Create shader materials
@@ -141,11 +143,11 @@ const createPikachuMaterial = (color: string) => {
   const material = new ShaderMaterial({
     uniforms: {
       color: { value: new Vector3(...hexToRgb(color)) },
-      time: { value: 0 }
+      time: { value: 0 },
     },
     vertexShader: pikachuBodyShader.vertexShader,
     fragmentShader: pikachuBodyShader.fragmentShader,
-    transparent: false
+    transparent: false,
   });
   return material;
 };
@@ -154,11 +156,11 @@ const createSparkleMaterial = (color: string) => {
   const material = new ShaderMaterial({
     uniforms: {
       color: { value: new Vector3(...hexToRgb(color)) },
-      time: { value: 0 }
+      time: { value: 0 },
     },
     vertexShader: sparkleShader.vertexShader,
     fragmentShader: sparkleShader.fragmentShader,
-    transparent: true
+    transparent: true,
   });
   return material;
 };
@@ -166,11 +168,13 @@ const createSparkleMaterial = (color: string) => {
 // Helper function to convert hex color to RGB
 function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
+  return result
+    ? [
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255,
+      ]
+    : [1, 1, 1];
 }
 
 // Add state for multiple Pika texts
@@ -184,7 +188,11 @@ interface PikaText {
 const goldenBerrySound = new Audio('/sounds/golden-berry.wav');
 goldenBerrySound.volume = 0.2; // Lower volume to 20%
 
-export function Pokemon({ position: initialPosition, gameState, score = 0 }: PokemonProps) {
+export function Pokemon({
+  position: initialPosition,
+  gameState,
+}: PokemonProps) {
+  const [score] = useAtom(scoreAtom);
   // Move prevScore ref inside component
   const prevScore = useRef(0);
   const groupRef = useRef<Group>(null);
@@ -196,7 +204,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
   const [isMoving, setIsMoving] = useState(false);
   const [isFastRunning, setIsFastRunning] = useState(false);
   const [pikaOpacity, setPikaOpacity] = useState(1);
-  
+
   const animationRef = useRef({
     bounce: 0,
     legRotation: 0,
@@ -237,14 +245,14 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
   // Create materials
   const bodyMaterial = useRef(createPikachuMaterial('#FFE135'));
   const sparkleMaterial = useRef(createSparkleMaterial('#FFD700'));
-  
+
   // Update shader uniforms
   useFrame((_, delta) => {
     if (!bodyMaterial.current || !sparkleMaterial.current) return;
-    
+
     bodyMaterial.current.uniforms.time.value += delta;
     sparkleMaterial.current.uniforms.time.value += delta;
-    
+
     // ... rest of the existing useFrame logic ...
   });
 
@@ -254,7 +262,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     // Each regular berry is worth 1 point, golden berry is worth 5 points
     // So we divide the score by 5 to get the equivalent number of regular berries
     const effectiveBerryCount = Math.floor(score / 5);
-    const speedBoost = Math.min(effectiveBerryCount * SPEED_BOOST_PER_BERRY, MAX_SPEED - BASE_SPEED);
+    const speedBoost = Math.min(
+      effectiveBerryCount * SPEED_BOOST_PER_BERRY,
+      MAX_SPEED - BASE_SPEED
+    );
     state.currentMaxSpeed = BASE_SPEED + speedBoost;
   }, [score]);
 
@@ -265,7 +276,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
       const state = gameStateRef.current;
-      
+
       // Only trigger flip if not already flipping
       if (!state.isFlipping) {
         if (key === 'q') {
@@ -286,7 +297,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           state.flipDirection = 'backward';
         }
       }
-      
+
       state.keysPressed.add(key);
     };
 
@@ -325,7 +336,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         MIN_CAMERA_DISTANCE,
         Math.min(
           MAX_CAMERA_DISTANCE,
-          state.cameraDistance + (event.deltaY * 0.001 * ZOOM_SPEED)
+          state.cameraDistance + event.deltaY * 0.001 * ZOOM_SPEED
         )
       );
     };
@@ -342,7 +353,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
 
     const handleMouseMove = (event: MouseEvent) => {
       if (document.pointerLockElement !== canvas) return;
-      
+
       const state = gameStateRef.current;
       state.cameraAngle -= event.movementX * state.mouseSensitivity;
     };
@@ -362,7 +373,11 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     };
 
     const handleFocus = () => {
-      if (gameState === 'playing' && !document.pointerLockElement && document.hasFocus()) {
+      if (
+        gameState === 'playing' &&
+        !document.pointerLockElement &&
+        document.hasFocus()
+      ) {
         setTimeout(lockPointer, 100); // Small delay to ensure window has focus
       }
     };
@@ -380,14 +395,17 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
-    
+
     // Add wheel event listener
     canvas.addEventListener('wheel', handleWheel);
-    
+
     return () => {
       canvas.removeEventListener('click', lockPointer);
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener(
+        'pointerlockchange',
+        handlePointerLockChange
+      );
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
@@ -410,28 +428,31 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
   useEffect(() => {
     if (gameState === 'playing' && !isCountingDown) {
       setIsCountingDown(true);
-      
+
       // Start with instant black screen
       setFadeOpacity(1);
-      
+
       // Sequence: hold black -> fade out -> wait -> start countdown
       setTimeout(() => {
         // Hold black for a moment
         setTimeout(() => {
           // Fade out to reveal scene
           setFadeOpacity(0);
-          
+
           // Start countdown after fade completes
           setTimeout(() => {
             setCountdown(3);
-            
+
             // Sequence of countdown numbers
-            const countdownSequence: Array<{ value: number | 'GO!' | null, delay: number }> = [
+            const countdownSequence: Array<{
+              value: number | 'GO!' | null;
+              delay: number;
+            }> = [
               { value: 3, delay: 0 },
               { value: 2, delay: 1000 },
               { value: 1, delay: 2000 },
               { value: 'GO!', delay: 3000 },
-              { value: null, delay: 4000 }
+              { value: null, delay: 4000 },
             ];
 
             countdownSequence.forEach(({ value, delay }) => {
@@ -445,7 +466,6 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           }, 800); // Wait for fade out to complete
         }, 400); // Hold black screen
       }, 100); // Initial delay
-      
     } else if (gameState !== 'playing') {
       setCountdown(null);
       setIsCountingDown(false);
@@ -467,12 +487,16 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         Math.cos(GAME_CAMERA_ANGLE) * GAME_CAMERA_DISTANCE
       );
 
-      const targetPosition = groupRef.current.position.clone().add(cameraOffset);
+      const targetPosition = groupRef.current.position
+        .clone()
+        .add(cameraOffset);
       camera.position.lerp(targetPosition, 0.1);
-      
-      const lookAtPos = groupRef.current.position.clone().add(new Vector3(0, 1, 0));
+
+      const lookAtPos = groupRef.current.position
+        .clone()
+        .add(new Vector3(0, 1, 0));
       camera.lookAt(lookAtPos);
-      
+
       // Store this position as the initial game position
       if (countdown === 'GO!') {
         state.cameraAngle = GAME_CAMERA_ANGLE;
@@ -488,9 +512,13 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     const anim = animationRef.current;
 
     // Calculate camera-relative movement directions
-    const cameraForward = new Vector3(0, 0, -1).applyEuler(new Euler(0, state.cameraAngle, 0));
-    const cameraRight = new Vector3(1, 0, 0).applyEuler(new Euler(0, state.cameraAngle, 0));
-    
+    const cameraForward = new Vector3(0, 0, -1).applyEuler(
+      new Euler(0, state.cameraAngle, 0)
+    );
+    const cameraRight = new Vector3(1, 0, 0).applyEuler(
+      new Euler(0, state.cameraAngle, 0)
+    );
+
     // Keep vectors horizontal
     cameraForward.y = 0;
     cameraRight.y = 0;
@@ -506,7 +534,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
 
     const moving = targetDirection.length() > 0;
     setIsMoving(moving);
-    
+
     // Update fast running state
     setIsFastRunning(state.speed > state.currentMaxSpeed * 0.65);
 
@@ -517,17 +545,20 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     if (moving) {
       targetDirection.normalize();
       const targetAngle = Math.atan2(targetDirection.x, targetDirection.z);
-      
+
       // Calculate current movement direction
-      const currentDirection = state.velocity.length() > 0 
-        ? state.velocity.clone().normalize()
-        : targetDirection.clone();
+      const currentDirection =
+        state.velocity.length() > 0
+          ? state.velocity.clone().normalize()
+          : targetDirection.clone();
       const currentAngle = Math.atan2(currentDirection.x, currentDirection.z);
-      
+
       // Check if we're trying to move in (roughly) the opposite direction
       const dotProduct = currentDirection.dot(targetDirection);
-      const isReversing = dotProduct < -REVERSE_TURN_THRESHOLD && state.velocity.length() > MIN_SPEED_FOR_TURN;
-      
+      const isReversing =
+        dotProduct < -REVERSE_TURN_THRESHOLD &&
+        state.velocity.length() > MIN_SPEED_FOR_TURN;
+
       if (isReversing) {
         // Immediate 180 turn
         const newAngle = targetAngle;
@@ -544,10 +575,12 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         let angleDiff = targetAngle - currentAngle;
         if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        
-        const turnAmount = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), delta * TURN_RATE);
+
+        const turnAmount =
+          Math.sign(angleDiff) *
+          Math.min(Math.abs(angleDiff), delta * TURN_RATE);
         const newAngle = currentAngle + turnAmount;
-        
+
         moveDirection.set(Math.sin(newAngle), 0, Math.cos(newAngle));
         state.targetRotation = newAngle;
       }
@@ -559,11 +592,13 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     }
 
     // Running animation
-    anim.bounce = (anim.bounce + delta * (isFastRunning ? 20 : 15)) % (Math.PI * 2);
-    
+    anim.bounce =
+      (anim.bounce + delta * (isFastRunning ? 20 : 15)) % (Math.PI * 2);
+
     if (isFastRunning) {
       // Four-legged running animation - more grounded
-      bodyRef.current.position.y = 0.08 + Math.abs(Math.sin(anim.bounce)) * 0.05;
+      bodyRef.current.position.y =
+        0.08 + Math.abs(Math.sin(anim.bounce)) * 0.05;
       bodyRef.current.rotation.x = -0.4 + Math.sin(anim.bounce) * 0.15;
       anim.legRotation = Math.sin(anim.bounce) * 1.4;
       anim.armRotation = Math.sin(anim.bounce + Math.PI) * 1.2;
@@ -571,7 +606,8 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
       anim.earWiggle = Math.cos(anim.bounce * 2) * 0.3;
     } else {
       // Normal running animation - more grounded
-      bodyRef.current.position.y = 0.05 + Math.abs(Math.sin(anim.bounce)) * 0.03;
+      bodyRef.current.position.y =
+        0.05 + Math.abs(Math.sin(anim.bounce)) * 0.03;
       bodyRef.current.rotation.x = -0.1 + Math.sin(anim.bounce) * 0.05;
       anim.legRotation = Math.sin(anim.bounce) * 1;
       anim.armRotation = Math.sin(anim.bounce + Math.PI) * 0.7;
@@ -590,12 +626,16 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         Math.sin(state.targetRotation - currentRotation),
         Math.cos(state.targetRotation - currentRotation)
       );
-      groupRef.current.rotation.y += rotationDiff * delta * state.rotationDampening;
+      groupRef.current.rotation.y +=
+        rotationDiff * delta * state.rotationDampening;
     }
 
     // Update speed based on movement with smoother transitions
     if (moving) {
-      state.speed = Math.min(state.speed + state.acceleration * delta * 60, state.currentMaxSpeed);
+      state.speed = Math.min(
+        state.speed + state.acceleration * delta * 60,
+        state.currentMaxSpeed
+      );
     } else {
       // Dynamic deceleration - less deceleration at higher speeds, but with a minimum value
       const speedRatio = state.speed / state.currentMaxSpeed;
@@ -603,28 +643,33 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         DECELERATION * (1 - speedRatio * 0.75), // Reduces deceleration up to 75% at max speed
         MIN_DECELERATION // But never less than this value
       );
-      state.speed = Math.max(state.speed - (dynamicDeceleration * (1 + state.speed * 0.5)) * delta * 60, 0);
+      state.speed = Math.max(
+        state.speed -
+          dynamicDeceleration * (1 + state.speed * 0.5) * delta * 60,
+        0
+      );
     }
 
     // Apply movement with boundary check and velocity dampening
     if (state.speed > 0) {
-      const moveVec = moving ? moveDirection : state.velocity.clone().normalize();
+      const moveVec = moving
+        ? moveDirection
+        : state.velocity.clone().normalize();
       state.velocity.copy(moveVec).multiplyScalar(state.speed);
-      
+
       // Apply velocity dampening when not moving
       if (!moving) {
         state.velocity.multiplyScalar(state.velocityDampening);
       }
-      
+
       // Calculate new position
       const newPosition = groupRef.current.position.clone().add(state.velocity);
-      
+
       // Check if new position is within boundary
       const distanceFromCenter = Math.sqrt(
-        newPosition.x * newPosition.x + 
-        newPosition.z * newPosition.z
+        newPosition.x * newPosition.x + newPosition.z * newPosition.z
       );
-      
+
       if (distanceFromCenter < BOUNDARY_RADIUS) {
         // Move freely within boundary
         groupRef.current.position.copy(newPosition);
@@ -639,16 +684,17 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         state.speed *= 0.7; // Softer speed reduction on collision
       }
 
-      setStepCount(prev => {
+      setStepCount((prev) => {
         const next = (prev + 1) % 300; // Much longer cycle (was 180)
         // Random chance to show Pika
-        if (next === 0 && Math.random() < 0.15) { // Reduced chance from 0.3 to 0.15
+        if (next === 0 && Math.random() < 0.15) {
+          // Reduced chance from 0.3 to 0.15
           setShowPika(true);
           setPikaOpacity(1);
           // Start fade out sooner and fade faster
           setTimeout(() => {
             const fadeOut = setInterval(() => {
-              setPikaOpacity(prev => {
+              setPikaOpacity((prev) => {
                 const newOpacity = prev - 0.1; // Faster fade (was 0.05)
                 if (newOpacity <= 0) {
                   clearInterval(fadeOut);
@@ -668,8 +714,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
     }
 
     // Camera follow logic
-    const horizontalDistance = Math.cos(state.isometricAngle) * state.cameraDistance;
-    const verticalDistance = Math.sin(state.isometricAngle) * state.cameraDistance;
+    const horizontalDistance =
+      Math.cos(state.isometricAngle) * state.cameraDistance;
+    const verticalDistance =
+      Math.sin(state.isometricAngle) * state.cameraDistance;
 
     const cameraOffset = new Vector3(
       Math.sin(state.cameraAngle) * horizontalDistance,
@@ -679,25 +727,29 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
 
     const targetPosition = groupRef.current.position.clone().add(cameraOffset);
     camera.position.lerp(targetPosition, state.cameraDampening);
-    
-    const lookAtPos = groupRef.current.position.clone().add(new Vector3(0, state.cameraLookHeight, 0));
+
+    const lookAtPos = groupRef.current.position
+      .clone()
+      .add(new Vector3(0, state.cameraLookHeight, 0));
     camera.lookAt(lookAtPos);
 
     // Handle 180-degree flips
     if (state.isFlipping) {
       state.flipProgress += delta / FLIP_DURATION;
-      
+
       if (state.flipProgress >= 1) {
         // Complete the flip
         state.isFlipping = false;
         state.flipProgress = 0;
-        
+
         // Apply the full 180-degree turn
         if (state.flipDirection === 'left' || state.flipDirection === 'right') {
-          state.cameraAngle += Math.PI * (state.flipDirection === 'left' ? 1 : -1);
+          state.cameraAngle +=
+            Math.PI * (state.flipDirection === 'left' ? 1 : -1);
         } else {
           // For forward/backward flips, we need to handle both camera and movement
-          state.cameraAngle += Math.PI * (state.flipDirection === 'forward' ? 1 : -1);
+          state.cameraAngle +=
+            Math.PI * (state.flipDirection === 'forward' ? 1 : -1);
           if (state.velocity.length() > 0) {
             state.velocity.multiplyScalar(-1);
           }
@@ -705,21 +757,31 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         state.flipDirection = null;
       } else {
         // Smooth interpolation during flip
-        const flipAmount = Math.sin(state.flipProgress * Math.PI * 0.5) * Math.PI;
-        
+        const flipAmount =
+          Math.sin(state.flipProgress * Math.PI * 0.5) * Math.PI;
+
         if (state.flipDirection === 'left' || state.flipDirection === 'right') {
-          state.cameraAngle = state.cameraAngle + 
-            (flipAmount * FLIP_RATE * delta * (state.flipDirection === 'left' ? 1 : -1));
+          state.cameraAngle =
+            state.cameraAngle +
+            flipAmount *
+              FLIP_RATE *
+              delta *
+              (state.flipDirection === 'left' ? 1 : -1);
         } else {
           // For forward/backward flips, interpolate both camera and movement
-          state.cameraAngle = state.cameraAngle + 
-            (flipAmount * FLIP_RATE * delta * (state.flipDirection === 'forward' ? 1 : -1));
-          
+          state.cameraAngle =
+            state.cameraAngle +
+            flipAmount *
+              FLIP_RATE *
+              delta *
+              (state.flipDirection === 'forward' ? 1 : -1);
+
           // Also adjust body rotation for the flip animation
           if (bodyRef.current) {
-            bodyRef.current.rotation.x = 
-              (state.flipDirection === 'forward' ? -1 : 1) * 
-              Math.sin(state.flipProgress * Math.PI) * 0.3;
+            bodyRef.current.rotation.x =
+              (state.flipDirection === 'forward' ? -1 : 1) *
+              Math.sin(state.flipProgress * Math.PI) *
+              0.3;
           }
         }
       }
@@ -737,7 +799,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
       const scoreDiff = score - prevScore.current;
       const isGoldenBerry = scoreDiff === 5;
       prevScore.current = score;
-      
+
       if (isGoldenBerry) {
         // Play golden berry sound
         goldenBerrySound.currentTime = 0;
@@ -748,29 +810,32 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
       const newPika = {
         id: nextPikaId.current++,
         opacity: 1,
-        yOffset: 0
+        yOffset: 0,
       };
-      setPikaTexts(prev => [...prev, newPika]);
+      setPikaTexts((prev) => [...prev, newPika]);
 
       // Animate the new text
       const startTime = Date.now();
       const animate = () => {
         const elapsed = Date.now() - startTime;
-        if (elapsed < 1000) { // Animation duration: 1 second
-          setPikaTexts(prev => prev.map(pika => {
-            if (pika.id === newPika.id) {
-              return {
-                ...pika,
-                opacity: Math.max(0, 1 - (elapsed / 1000) * 1.5), // Fade out faster
-                yOffset: (elapsed / 1000) * 2 // Float up faster
-              };
-            }
-            return pika;
-          }));
+        if (elapsed < 1000) {
+          // Animation duration: 1 second
+          setPikaTexts((prev) =>
+            prev.map((pika) => {
+              if (pika.id === newPika.id) {
+                return {
+                  ...pika,
+                  opacity: Math.max(0, 1 - (elapsed / 1000) * 1.5), // Fade out faster
+                  yOffset: (elapsed / 1000) * 2, // Float up faster
+                };
+              }
+              return pika;
+            })
+          );
           requestAnimationFrame(animate);
         } else {
           // Remove this Pika text
-          setPikaTexts(prev => prev.filter(pika => pika.id !== newPika.id));
+          setPikaTexts((prev) => prev.filter((pika) => pika.id !== newPika.id));
         }
       };
       requestAnimationFrame(animate);
@@ -786,20 +851,28 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
   // Modify the reset position effect to include camera reset and fade
   useEffect(() => {
     // Only reset if transitioning from gameover/start to playing
-    if (gameState === 'playing' && prevGameStateRef.current !== 'playing' && groupRef.current) {
+    if (
+      gameState === 'playing' &&
+      prevGameStateRef.current !== 'playing' &&
+      groupRef.current
+    ) {
       // Start fade in
       setFadeOpacity(1);
-      
+
       // Reset position and movement state
       const state = gameStateRef.current;
       state.velocity.set(0, 0, 0);
       state.speed = 0;
       state.cameraAngle = 0;
       state.cameraDistance = INITIAL_CAMERA_DISTANCE;
-      
+
       // Reset position to center
-      groupRef.current.position.set(initialPosition[0], 0.05, initialPosition[2]);
-      
+      groupRef.current.position.set(
+        initialPosition[0],
+        0.05,
+        initialPosition[2]
+      );
+
       // Fade out after a short delay
       setTimeout(() => {
         setFadeOpacity(0);
@@ -820,7 +893,11 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
   }, [score]);
 
   return (
-    <group ref={groupRef} position={[initialPosition[0], 0.05, initialPosition[2]]} name="pokemon">
+    <group
+      ref={groupRef}
+      position={[initialPosition[0], 0.05, initialPosition[2]]}
+      name="pokemon"
+    >
       {/* Fade overlay with smoother transition */}
       <Html
         position={[0, 0, 0]}
@@ -856,9 +933,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
             transform: 'scale(1)',
             opacity: 1,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            animation: countdown === 'GO!' ? 
-              'countdown-go 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 
-              'countdown-number 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            animation:
+              countdown === 'GO!'
+                ? 'countdown-go 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                : 'countdown-number 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
             pointerEvents: 'none',
             zIndex: 1001,
           }}
@@ -881,7 +959,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           {countdown}
         </Html>
       )}
-      {pikaTexts.map(pika => (
+      {pikaTexts.map((pika) => (
         <Html
           key={pika.id}
           position={[0, 1.5 + pika.yOffset, 0]}
@@ -910,7 +988,7 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           Pika!
         </Html>
       ))}
-      
+
       <group ref={bodyRef}>
         {/* Main body - smaller blocks for more detail */}
         <mesh castShadow position={[0, 0.4, 0]}>
@@ -926,15 +1004,21 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           <boxGeometry args={[0.1, 0.45, 0.35]} />
           <primitive object={bodyMaterial.current} attach="material" />
         </mesh>
-        
+
         {/* Belly - more rounded */}
         <mesh castShadow position={[0, 0.35, 0.21]}>
           <boxGeometry args={[0.4, 0.4, 0.01]} />
-          <primitive object={createPikachuMaterial('#FFF4B3')} attach="material" />
+          <primitive
+            object={createPikachuMaterial('#FFF4B3')}
+            attach="material"
+          />
         </mesh>
         <mesh castShadow position={[0, 0.35, 0.22]}>
           <boxGeometry args={[0.35, 0.35, 0.01]} />
-          <primitive object={createPikachuMaterial('#FFF4B3')} attach="material" />
+          <primitive
+            object={createPikachuMaterial('#FFF4B3')}
+            attach="material"
+          />
         </mesh>
 
         {/* Head - more detailed */}
@@ -953,7 +1037,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         </mesh>
 
         {/* Ears - shorter and more proportional */}
-        <group position={[-0.2, 1.1, 0]} rotation={[0, 0, -0.2 + animationRef.current.earWiggle]}>
+        <group
+          position={[-0.2, 1.1, 0]}
+          rotation={[0, 0, -0.2 + animationRef.current.earWiggle]}
+        >
           <mesh castShadow position={[0, 0, 0]}>
             <boxGeometry args={[0.12, 0.2, 0.08]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -964,10 +1051,16 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           </mesh>
           <mesh castShadow position={[0, 0.25, 0]}>
             <boxGeometry args={[0.08, 0.1, 0.08]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
         </group>
-        <group position={[0.2, 1.1, 0]} rotation={[0, 0, 0.2 - animationRef.current.earWiggle]}>
+        <group
+          position={[0.2, 1.1, 0]}
+          rotation={[0, 0, 0.2 - animationRef.current.earWiggle]}
+        >
           <mesh castShadow position={[0, 0, 0]}>
             <boxGeometry args={[0.12, 0.2, 0.08]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -978,7 +1071,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           </mesh>
           <mesh castShadow position={[0, 0.25, 0]}>
             <boxGeometry args={[0.08, 0.1, 0.08]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
         </group>
 
@@ -987,41 +1083,65 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
           {/* Eyes */}
           <mesh position={[-0.12, 0.08, 0]}>
             <boxGeometry args={[0.1, 0.1, 0.01]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
           <mesh position={[0.12, 0.08, 0]}>
             <boxGeometry args={[0.1, 0.1, 0.01]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
-          
+
           {/* Eye highlights */}
           <mesh position={[-0.1, 0.12, 0.01]}>
             <boxGeometry args={[0.03, 0.03, 0.01]} />
-            <primitive object={createPikachuMaterial('#FFFFFF')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FFFFFF')}
+              attach="material"
+            />
           </mesh>
           <mesh position={[0.14, 0.12, 0.01]}>
             <boxGeometry args={[0.03, 0.03, 0.01]} />
-            <primitive object={createPikachuMaterial('#FFFFFF')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FFFFFF')}
+              attach="material"
+            />
           </mesh>
 
           {/* Nose */}
           <mesh position={[0, 0, 0]}>
             <boxGeometry args={[0.02, 0.02, 0.02]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
 
           {/* Mouth - smaller segments */}
           <mesh position={[-0.08, -0.12, 0]}>
             <boxGeometry args={[0.06, 0.015, 0.01]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
           <mesh position={[0, -0.14, 0]}>
             <boxGeometry args={[0.06, 0.015, 0.01]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
           <mesh position={[0.08, -0.12, 0]}>
             <boxGeometry args={[0.06, 0.015, 0.01]} />
-            <primitive object={createPikachuMaterial('#111111')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#111111')}
+              attach="material"
+            />
           </mesh>
         </group>
 
@@ -1029,20 +1149,37 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         <group position={[-0.22, 0.72, 0.23]}>
           <mesh castShadow>
             <boxGeometry args={[0.12, 0.12, 0.01]} />
-            <primitive object={createPikachuMaterial('#FF6B6B')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FF6B6B')}
+              attach="material"
+            />
           </mesh>
           <mesh castShadow position={[0, 0, 0.01]}>
             <boxGeometry args={[0.09, 0.09, 0.01]} />
-            <primitive object={createPikachuMaterial('#FF5151')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FF5151')}
+              attach="material"
+            />
           </mesh>
           {animationRef.current.electricTimer < 0.3 && (
             <>
               <pointLight color="#FFD700" intensity={1.5} distance={0.6} />
               {[0, 1, 2, 3].map((i) => (
-                <group key={i} rotation={[0, 0, (Math.PI * 2 * i / 4) + animationRef.current.sparkleRotation]}>
+                <group
+                  key={i}
+                  rotation={[
+                    0,
+                    0,
+                    (Math.PI * 2 * i) / 4 +
+                      animationRef.current.sparkleRotation,
+                  ]}
+                >
                   <mesh position={[0.12, 0, 0]}>
                     <boxGeometry args={[0.03, 0.03, 0.03]} />
-                    <primitive object={sparkleMaterial.current} attach="material" />
+                    <primitive
+                      object={sparkleMaterial.current}
+                      attach="material"
+                    />
                   </mesh>
                 </group>
               ))}
@@ -1052,20 +1189,37 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         <group position={[0.22, 0.72, 0.23]}>
           <mesh castShadow>
             <boxGeometry args={[0.12, 0.12, 0.01]} />
-            <primitive object={createPikachuMaterial('#FF6B6B')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FF6B6B')}
+              attach="material"
+            />
           </mesh>
           <mesh castShadow position={[0, 0, 0.01]}>
             <boxGeometry args={[0.09, 0.09, 0.01]} />
-            <primitive object={createPikachuMaterial('#FF5151')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#FF5151')}
+              attach="material"
+            />
           </mesh>
           {animationRef.current.electricTimer < 0.3 && (
             <>
               <pointLight color="#FFD700" intensity={1.5} distance={0.6} />
               {[0, 1, 2, 3].map((i) => (
-                <group key={i} rotation={[0, 0, (Math.PI * 2 * i / 4) + animationRef.current.sparkleRotation]}>
+                <group
+                  key={i}
+                  rotation={[
+                    0,
+                    0,
+                    (Math.PI * 2 * i) / 4 +
+                      animationRef.current.sparkleRotation,
+                  ]}
+                >
                   <mesh position={[0.12, 0, 0]}>
                     <boxGeometry args={[0.03, 0.03, 0.03]} />
-                    <primitive object={sparkleMaterial.current} attach="material" />
+                    <primitive
+                      object={sparkleMaterial.current}
+                      attach="material"
+                    />
                   </mesh>
                 </group>
               ))}
@@ -1074,7 +1228,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         </group>
 
         {/* Arms - smaller segments */}
-        <group position={[-0.3, 0.45, 0]} rotation={[animationRef.current.armRotation, 0, -0.3]}>
+        <group
+          position={[-0.3, 0.45, 0]}
+          rotation={[animationRef.current.armRotation, 0, -0.3]}
+        >
           <mesh castShadow>
             <boxGeometry args={[0.12, 0.2, 0.12]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -1084,7 +1241,10 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
             <primitive object={bodyMaterial.current} attach="material" />
           </mesh>
         </group>
-        <group position={[0.3, 0.45, 0]} rotation={[-animationRef.current.armRotation, 0, 0.3]}>
+        <group
+          position={[0.3, 0.45, 0]}
+          rotation={[-animationRef.current.armRotation, 0, 0.3]}
+        >
           <mesh castShadow>
             <boxGeometry args={[0.12, 0.2, 0.12]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -1096,7 +1256,14 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         </group>
 
         {/* Legs - smaller segments */}
-        <group position={[-0.2, 0.08, 0]} rotation={[isMoving ? animationRef.current.legRotation : 0, 0, isFastRunning ? -0.3 : 0]}>
+        <group
+          position={[-0.2, 0.08, 0]}
+          rotation={[
+            isMoving ? animationRef.current.legRotation : 0,
+            0,
+            isFastRunning ? -0.3 : 0,
+          ]}
+        >
           <mesh castShadow>
             <boxGeometry args={[0.2, 0.2, 0.2]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -1106,7 +1273,14 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
             <primitive object={bodyMaterial.current} attach="material" />
           </mesh>
         </group>
-        <group position={[0.2, 0.08, 0]} rotation={[isMoving ? -animationRef.current.legRotation : 0, 0, isFastRunning ? 0.3 : 0]}>
+        <group
+          position={[0.2, 0.08, 0]}
+          rotation={[
+            isMoving ? -animationRef.current.legRotation : 0,
+            0,
+            isFastRunning ? 0.3 : 0,
+          ]}
+        >
           <mesh castShadow>
             <boxGeometry args={[0.2, 0.2, 0.2]} />
             <primitive object={bodyMaterial.current} attach="material" />
@@ -1118,33 +1292,71 @@ export function Pokemon({ position: initialPosition, gameState, score = 0 }: Pok
         </group>
 
         {/* Tail - smaller segments */}
-        <group position={[0, 0.4, -0.5]} rotation={[0.6 + animationRef.current.tailWag, 0, 0]}>
+        <group
+          position={[0, 0.4, -0.5]}
+          rotation={[0.6 + animationRef.current.tailWag, 0, 0]}
+        >
           {/* Base */}
-          <mesh castShadow position={[0, 0.1, 0]} rotation={[0, 0, Math.PI / 6]}>
+          <mesh
+            castShadow
+            position={[0, 0.1, 0]}
+            rotation={[0, 0, Math.PI / 6]}
+          >
             <boxGeometry args={[0.15, 0.3, 0.15]} />
-            <primitive object={createPikachuMaterial('#964B00')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#964B00')}
+              attach="material"
+            />
           </mesh>
           {/* Middle */}
-          <mesh castShadow position={[0.15, 0.25, 0]} rotation={[0, 0, -Math.PI / 4]}>
+          <mesh
+            castShadow
+            position={[0.15, 0.25, 0]}
+            rotation={[0, 0, -Math.PI / 4]}
+          >
             <boxGeometry args={[0.15, 0.3, 0.15]} />
-            <primitive object={createPikachuMaterial('#964B00')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#964B00')}
+              attach="material"
+            />
           </mesh>
           {/* Upper */}
-          <mesh castShadow position={[0, 0.4, 0]} rotation={[0, 0, Math.PI / 4]}>
+          <mesh
+            castShadow
+            position={[0, 0.4, 0]}
+            rotation={[0, 0, Math.PI / 4]}
+          >
             <boxGeometry args={[0.15, 0.3, 0.15]} />
-            <primitive object={createPikachuMaterial('#964B00')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#964B00')}
+              attach="material"
+            />
           </mesh>
           {/* Tip segments */}
-          <mesh castShadow position={[0.15, 0.55, 0]} rotation={[0, 0, -Math.PI / 6]}>
+          <mesh
+            castShadow
+            position={[0.15, 0.55, 0]}
+            rotation={[0, 0, -Math.PI / 6]}
+          >
             <boxGeometry args={[0.4, 0.15, 0.15]} />
-            <primitive object={createPikachuMaterial('#964B00')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#964B00')}
+              attach="material"
+            />
           </mesh>
-          <mesh castShadow position={[0.25, 0.6, 0]} rotation={[0, 0, -Math.PI / 6]}>
+          <mesh
+            castShadow
+            position={[0.25, 0.6, 0]}
+            rotation={[0, 0, -Math.PI / 6]}
+          >
             <boxGeometry args={[0.2, 0.12, 0.12]} />
-            <primitive object={createPikachuMaterial('#964B00')} attach="material" />
+            <primitive
+              object={createPikachuMaterial('#964B00')}
+              attach="material"
+            />
           </mesh>
         </group>
       </group>
     </group>
   );
-} 
+}
