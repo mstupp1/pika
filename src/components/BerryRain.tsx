@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   gameStateAtom,
   berryPositionsAtom,
@@ -9,7 +9,7 @@ import generateBerryPosition from '../utils/generateBerryPosition';
 
 export const BerryRain = () => {
   const [gameState] = useAtom(gameStateAtom);
-  const [, setBerryPositions] = useAtom(berryPositionsAtom);
+  const setBerryPositions = useSetAtom(berryPositionsAtom);
   const [lastRainTime, setLastRainTime] = useAtom(lastRainTimeAtom);
 
   useEffect(() => {

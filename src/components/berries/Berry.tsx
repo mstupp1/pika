@@ -12,18 +12,14 @@ import { useFrame } from '@react-three/fiber';
 interface BerryProps {
   position?: [number, number, number];
   onCollect?: () => void;
-  // isGolden?: boolean;
-  // isPurple?: boolean;
   canCollect?: boolean;
 }
 
 export function Berry({
   position = [0, 0, 0],
-  // isGolden = false,
-  // isPurple = false,
   onCollect,
   ...props
-}: BerryProps & JSX.IntrinsicElements['mesh']) {
+}: BerryProps) {
   const berryRef = useRef<any>(null);
 
   const [collected, setCollected] = useState(false);
@@ -78,8 +74,6 @@ export function Berry({
     <Instance
       ref={berryRef}
       scale={scale}
-      // geometry={nodes.Berry.geometry}
-      // material={materials['Material.001']}
       position={[position[0], position[1], position[2]]}
       {...props}
     />

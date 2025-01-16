@@ -6,12 +6,12 @@ import {
   scoreAtom,
   targetBerryCountAtom,
   timeLeftAtom,
-} from '../atoms/gameState';
+} from '../../atoms/gameState';
 import { Berry } from './Berry';
 import { Instances, useGLTF } from '@react-three/drei';
 import { GLTF } from 'three-stdlib';
-import { BerryData } from '../types';
-import { useHandleCollect } from '../hooks/useHandleCollect';
+// import { BerryData } from '../../types/berries.types';
+import { useHandleCollect } from '../../hooks/useHandleCollect';
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -36,7 +36,7 @@ export function Berries() {
       );
     }
   }, [berriesRef]);
-
+  console.log(berryPositions.length);
   return (
     <Instances
       ref={berriesRef}

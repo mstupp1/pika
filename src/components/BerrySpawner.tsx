@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   gameStateAtom,
   berryPositionsAtom,
@@ -12,7 +12,7 @@ import { BerryData } from '../types';
 export const BerrySpawner = () => {
   const [gameState] = useAtom(gameStateAtom);
   const [timeLeft] = useAtom(timeLeftAtom);
-  const [, setBerryPositions] = useAtom(berryPositionsAtom);
+  const setBerryPositions = useSetAtom(berryPositionsAtom);
   const [targetBerryCount] = useAtom(targetBerryCountAtom);
 
   useEffect(() => {

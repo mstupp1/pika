@@ -9,7 +9,7 @@ import { Canvas } from '@react-three/fiber';
 import { Stats, StatsGl } from '@react-three/drei';
 import { Pokemon } from './components/Pokemon';
 import { Forest } from './components/Forest';
-import { Berry } from './components/Berry';
+// import { Berry } from './components/Berry';
 import { StartScreen } from './components/StartScreen';
 import { CustomCursor } from './components/CustomCursor';
 import { Clouds } from './components/Clouds';
@@ -26,13 +26,13 @@ import {
   lastRainTimeAtom,
   targetBerryCountAtom,
 } from './atoms/gameState';
-import { Berries } from './components/Berries';
+import { Berries } from './components/berries/Berries';
 import { StartScreenContainer } from './components/StartScreenContainer';
 import { HUD } from './components/HUD';
 import { GameOver } from './components/GameOver';
 import { LoadingScreen } from './components/LoadingScreen';
 
-import { BerryData } from './types';
+import { BerryData } from './types/berries.types';
 // Generate random berry position with optional height for falling berries
 
 import generateBerryPosition from './utils/generateBerryPosition';

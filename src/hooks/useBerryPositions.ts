@@ -3,7 +3,7 @@ import { berryPositionsAtom, timeLeftAtom } from '../atoms/gameState';
 import { useCallback, useEffect } from 'react';
 
 export function useBerryPositions(gameState: string, targetBerryCount: number) {
-  const [berryPositions, setBerryPositions] = useSetAtom(berryPositionsAtom);
+  const setBerryPositions = useSetAtom(berryPositionsAtom);
   const [timeLeft] = useAtom(timeLeftAtom);
 
   // Move all the berry-related useEffects here
