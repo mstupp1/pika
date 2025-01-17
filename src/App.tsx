@@ -106,7 +106,7 @@ function App() {
 
           <ambientLight intensity={0.4} />
 
-          <fog attach="fog" args={['#87CEEB', 18, 30]} />
+          <fog attach="fog" args={['#87CEEB', 18, 30]} near={0.1} far={100} />
 
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
