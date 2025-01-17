@@ -14,6 +14,7 @@ export default function createVarStr(
 
   for (const dataType in variables) {
     for (const va in variables[dataType]) {
+      console.log(variables[dataType][va]);
       const variable = variables[dataType][va];
       const { varType, isArr } = getVarType(variable.type);
       shaderStr = !isArr

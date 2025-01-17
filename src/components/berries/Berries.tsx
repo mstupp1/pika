@@ -1,64 +1,70 @@
 import * as THREE from 'three';
-import { useEffect, useRef, useCallback } from 'react';
-import { useAtom, useSetAtom } from 'jotai';
-import {
-  berryPositionsAtom,
-  scoreAtom,
-  targetBerryCountAtom,
-  timeLeftAtom,
-} from '../../atoms/gameState';
-import { Berry } from './Berry';
-import { Instances, useGLTF } from '@react-three/drei';
-import { GLTF } from 'three-stdlib';
-// import { BerryData } from '../../types/berries.types';
-import { useHandleCollect } from '../../hooks/useHandleCollect';
+import { useRef, useEffect, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { createBerryGeometry } from './BerryGeometry';
+import { createBerryMaterial } from './BerryMaterial';
 
-type GLTFResult = GLTF & {
-  nodes: {
-    Berry: THREE.Mesh;
-  };
-  materials: {
-    ['Material.001']: THREE.MeshStandardMaterial;
-  };
-};
+const MAX_BERRIES = 1000;
 
 export function Berries() {
-  const { nodes, materials } = useGLTF('/berry.glb') as unknown as GLTFResult;
-  const berriesRef = useRef<any>(null);
-  const [berryPositions] = useAtom(berryPositionsAtom);
-  const handleCollect = useHandleCollect();
+  const meshRef = useRef<any>();
+  const timeRef = useRef(0);
+  const lastSpawnRef = useRef(0);
 
-  useEffect(() => {
-    if (berriesRef.current) {
-      berriesRef.current.boundingSphere = new THREE.Sphere(
-        new THREE.Vector3(),
-        1000
-      );
+  const geometry = useMemo(() => createBerryGeometry(MAX_BERRIES), []);
+  const material = useMemo(() => createBerryMaterial(), []);
+  // useEffect(() => {
+  //   if (!meshRef.current) return;
+
+  //   const geometry = createBerryGeometry(MAX_BERRIES);
+  //   const material = createBerryMaterial();
+
+  //   meshRef.current.geometry = geometry;
+  //   meshRef.current.material = material;
+  // }, []);
+
+  useFrame((state, delta) => {
+    if (!meshRef.current) return;
+
+    // Update time uniforms
+    // console.log(material);
+    // const material = meshRef.current.material as THREE.ShaderMaterial;
+
+    material.uniforms.time.value = state.clock.elapsedTime;
+    material.uniforms.deltaTime.value = delta;
+
+    // Spawn new berries periodically
+    if (state.clock.elapsedTime - lastSpawnRef.current > 0.5) {
+      const positions =
+        meshRef.current.geometry.getAttribute('instancePosition');
+      const states = meshRef.current.geometry.getAttribute('instanceState');
+      const types = meshRef.current.geometry.getAttribute('instanceType');
+
+      // Find inactive berry slots and spawn new ones
+      for (let i = 0; i < MAX_BERRIES; i++) {
+        if (states.getX(i) === 0) {
+          positions.setXYZ(
+            i,
+            (Math.random() - 0.5) * 20,
+            35 + Math.random() * 10,
+            (Math.random() - 0.5) * 20
+          );
+          states.setX(i, 1); // Set to raining state
+          types.setX(
+            i,
+            Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : 2) : 0
+          );
+        }
+      }
+
+      positions.needsUpdate = true;
+      states.needsUpdate = true;
+      types.needsUpdate = true;
+      lastSpawnRef.current = state.clock.elapsedTime;
     }
-  }, [berriesRef]);
-  console.log(berryPositions.length);
+  });
+
   return (
-    <Instances
-      ref={berriesRef}
-      count={berryPositions.length}
-      geometry={nodes.Berry.geometry}
-      material={materials['Material.001']}
-    >
-      {berryPositions.map((berry, index) => (
-        <Berry
-          key={`${index}-${berry.position.join(',')}`}
-          position={berry.position}
-          isGolden={berry.isGolden}
-          isPurple={berry.isPurple}
-          onCollect={() =>
-            berry.canCollect
-              ? handleCollect(berry.isGolden, berry.isPurple)
-              : undefined
-          }
-        />
-      ))}
-    </Instances>
+    <instancedMesh ref={meshRef} args={[geometry, material, MAX_BERRIES]} />
   );
 }
-
-useGLTF.preload('/berry.glb');

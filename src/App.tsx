@@ -38,8 +38,6 @@ import { BerryData } from './types/berries.types';
 import generateBerryPosition from './utils/generateBerryPosition';
 import { GameInitializer } from './components/GameInitializer';
 import { GameTimer } from './components/GameTimer';
-import { BerrySpawner } from './components/BerrySpawner';
-import { BerryRain } from './components/BerryRain';
 
 function App() {
   const [gameState, setGameState] = useAtom(gameStateAtom);
@@ -76,8 +74,6 @@ function App() {
       <StartScreenContainer />
       <GameInitializer />
       <GameTimer />
-      <BerrySpawner />
-      <BerryRain />
       <HUD />
       <GameOver />
       <div style={{ width: '100vw', height: '100vh' }}>
